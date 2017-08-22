@@ -81,14 +81,49 @@ namespace TShockAPI
 		/// </summary>
 		public static readonly int MaxInventory = InventorySlots + ArmorSlots + DyeSlots + MiscEquipSlots + MiscDyeSlots + PiggySlots + SafeSlots + ForgeSlots + 1;
 
+		/// <summary>
+		/// Gets a mapping of inventory slot indexes. 
+		/// </summary>
 		public static readonly Tuple<int, int> InventoryIndex = new Tuple<int, int>(0, InventorySlots);
+
+		/// <summary>
+		/// Gets a mapping of armor slot indexes. Item1: the starting armor index. Item2: the ending armor index.
+		/// </summary>
 		public static readonly Tuple<int, int> ArmorIndex = new Tuple<int, int>(InventoryIndex.Item2, InventoryIndex.Item2 + ArmorSlots);
+
+		/// <summary>
+		/// Gets a mapping of dye slot indexes. Item1: the starting dye index. Item2: the ending dye index.
+		/// </summary>
 		public static readonly Tuple<int, int> DyeIndex = new Tuple<int, int>(ArmorIndex.Item2, ArmorIndex.Item2 + DyeSlots);
+
+		/// <summary>
+		/// Gets a mapping of misc equips slot indexes. Item1: the starting misc equip index. Item2: the ending misc equip index.
+		/// </summary>
 		public static readonly Tuple<int, int> MiscEquipIndex = new Tuple<int, int>(DyeIndex.Item2, DyeIndex.Item2 + MiscEquipSlots);
+
+		/// <summary>
+		/// Gets a mapping of misc dye slot indexes. Item1: the starting misc dye index. Item2: the ending misc dye index.
+		/// </summary>
 		public static readonly Tuple<int, int> MiscDyeIndex = new Tuple<int, int>(MiscEquipIndex.Item2, MiscEquipIndex.Item2 + MiscDyeSlots);
+
+		/// <summary>
+		/// Gets a mapping of piggy bank slot indexes. Item1: the starting dye index. Item2: the ending dye index.
+		/// </summary>
 		public static readonly Tuple<int, int> PiggyIndex = new Tuple<int, int>(MiscDyeIndex.Item2, MiscDyeIndex.Item2 + PiggySlots);
+
+		/// <summary>
+		/// Gets a mapping of safe slot indexes. Item1: the starting safe index. Item2: the ending safe index.
+		/// </summary>
 		public static readonly Tuple<int, int> SafeIndex = new Tuple<int, int>(PiggyIndex.Item2, PiggyIndex.Item2 + SafeSlots);
+
+		/// <summary>
+		/// Gets a mapping of trash slot indexes. Item1: the starting trash index. Item2: the ending trash index.
+		/// </summary>
 		public static readonly Tuple<int, int> TrashIndex = new Tuple<int, int>(SafeIndex.Item2, SafeIndex.Item2 + TrashSlots);
+
+		/// <summary>
+		/// Gets a mapping of forge slot indexes. Item1: the starting forge index. Item2: the ending forge index.
+		/// </summary>
 		public static readonly Tuple<int, int> ForgeIndex = new Tuple<int, int>(TrashIndex.Item2, TrashIndex.Item2 + ForgeSlots);
 
 		[JsonProperty("netID")]

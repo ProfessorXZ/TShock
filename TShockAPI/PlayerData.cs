@@ -16,37 +16,132 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Terraria;
-using TShockAPI;
 using Terraria.Localization;
 
 namespace TShockAPI
 {
+	/// <summary>
+	/// Holds a player's character information.
+	/// </summary>
 	public class PlayerData
 	{
+		/// <summary>
+		/// Gets the inventory.
+		/// </summary>
 		public NetItem[] inventory = new NetItem[NetItem.MaxInventory];
+
+		/// <summary>
+		/// Gets the buffs.
+		/// </summary>
+		public NetBuff[] buffs = new NetBuff[Player.maxBuffs];
+
+		/// <summary>
+		/// Gets the health value.
+		/// </summary>
 		public int health = TShock.ServerSideCharacterConfig.StartingHealth;
+
+		/// <summary>
+		/// Gets the maximum health value.
+		/// </summary>
 		public int maxHealth = TShock.ServerSideCharacterConfig.StartingHealth;
+
+		/// <summary>
+		/// Gets the mana value.
+		/// </summary>
 		public int mana = TShock.ServerSideCharacterConfig.StartingMana;
+
+		/// <summary>
+		/// Gets the maximum mana value.
+		/// </summary>
 		public int maxMana = TShock.ServerSideCharacterConfig.StartingMana;
+
+		/// <summary>
+		/// Determines whether the character information already exists.
+		/// </summary>
 		public bool exists;
+
+		/// <summary>
+		/// Gets the X spawn coordinate.
+		/// </summary>
 		public int spawnX = -1;
+
+		/// <summary>
+		/// Gets the Y spawn coordinate.
+		/// </summary>
 		public int spawnY = -1;
+
+		/// <summary>
+		/// Determines whether the character has the extra slot available. This field can be null.
+		/// </summary>
 		public int? extraSlot;
+
+		/// <summary>
+		/// Gets the character's skin variant. This field can be null.
+		/// </summary>
 		public int? skinVariant;
+
+		/// <summary>
+		/// Gets the hair type. This field can be null.
+		/// </summary>
 		public int? hair;
+
+		/// <summary>
+		/// Gets the hair dye.
+		/// </summary>
 		public byte hairDye;
+
+		/// <summary>
+		/// Gets the hair color. This field can be null.
+		/// </summary>
 		public Color? hairColor;
+
+		/// <summary>
+		/// Gets the pants color. This field can be null.
+		/// </summary>
 		public Color? pantsColor;
+
+		/// <summary>
+		/// Gets the shirt color. This field can be null.
+		/// </summary>
 		public Color? shirtColor;
+
+		/// <summary>
+		/// Gets the undershirt color. This field can be null.
+		/// </summary>
 		public Color? underShirtColor;
+
+		/// <summary>
+		/// Gets the shoes color. This field can be null.
+		/// </summary>
 		public Color? shoeColor;
+
+		/// <summary>
+		/// Gets the skin color. This field can be null.
+		/// </summary>
 		public Color? skinColor;
+
+		/// <summary>
+		/// Gets the eye color. This field can be null.
+		/// </summary>
 		public Color? eyeColor;
+
+		/// <summary>
+		/// Whether or not visuals such as merman, werewolf, etc. will be hidden.
+		/// </summary>
 		public bool[] hideVisuals;
+
+		/// <summary>
+		/// Gets the number of angler quests completed.
+		/// </summary>
 		public int questsCompleted;
 
+		/// <summary>
+		/// Initializes a new instance of the <see cref="PlayerData"/> class with the specified <see cref="TSPlayer"/> instance.
+		/// </summary>
+		/// <param name="player">The player.</param>
 		public PlayerData(TSPlayer player)
 		{
 			for (int i = 0; i < NetItem.MaxInventory; i++)
@@ -62,12 +157,12 @@ namespace TShockAPI
 		}
 
 		/// <summary>
-		/// Stores an item at the specific storage slot
+		/// Stores an item at the specific storage slot.
 		/// </summary>
-		/// <param name="slot"></param>
-		/// <param name="netID"></param>
-		/// <param name="prefix"></param>
-		/// <param name="stack"></param>
+		/// <param name="slot">The slot ID.</param>
+		/// <param name="netID">The item's netID.</param>
+		/// <param name="prefix">The item's prefix.</param>
+		/// <param name="stack">The item's stack.</param>
 		public void StoreSlot(int slot, int netID, byte prefix, int stack)
 		{
 			if (slot > (this.inventory.Length - 1)) //if the slot is out of range then dont save
@@ -79,9 +174,9 @@ namespace TShockAPI
 		}
 
 		/// <summary>
-		/// Copies a characters data to this object
+		/// Copies a characters data to this object.
 		/// </summary>
-		/// <param name="player"></param>
+		/// <param name="player">The character.</param>
 		public void CopyCharacter(TSPlayer player)
 		{
 			this.health = player.TPlayer.statLife > 0 ? player.TPlayer.statLife : 1;
@@ -121,6 +216,11 @@ namespace TShockAPI
 			Item[] safe = player.TPlayer.bank2.item;
 			Item[] forge = player.TPlayer.bank3.item;
 			Item trash = player.TPlayer.trashItem;
+
+			for (int i = 0; i < Player.maxBuffs; i++)
+			{
+				buffs[i] = new NetBuff(player.TPlayer.buffType[i], player.TPlayer.buffTime[i]);
+			}
 
 			for (int i = 0; i < NetItem.MaxInventory; i++)
 			{
@@ -175,7 +275,6 @@ namespace TShockAPI
 					//220
 					var index = i - NetItem.ForgeIndex.Item1;
 					this.inventory[i] = (NetItem)forge[index];
-					
 				}
 			}
 		}
@@ -183,7 +282,7 @@ namespace TShockAPI
 		/// <summary>
 		/// Restores a player's character to the state stored in the database
 		/// </summary>
-		/// <param name="player"></param>
+		/// <param name="player">The player.</param>
 		public void RestoreCharacter(TSPlayer player)
 		{
 			// Start ignoring SSC-related packets! This is critical so that we don't send or receive dirty data!
@@ -334,7 +433,6 @@ namespace TShockAPI
 						player.TPlayer.bank3.item[index].stack = this.inventory[i].Stack;
 						player.TPlayer.bank3.item[index].Prefix((byte)this.inventory[i].PrefixId);
 					}
-					
 				}
 			}
 
@@ -437,7 +535,10 @@ namespace TShockAPI
 
 			for (int k = 0; k < 22; k++)
 			{
-				player.TPlayer.buffType[k] = 0;
+				//player.TPlayer.buffType[k] = buffs[k].Type;
+				//player.TPlayer.buffTime[k] = buffs[k].Time;
+				//player
+				player.SetBuff(buffs[k].Type, buffs[k].Time * 60);
 			}
 
 			/*
@@ -446,8 +547,8 @@ namespace TShockAPI
 			 * This is for when players login via uuid or serverpassword instead of via
 			 * the login command.
 			 */
-			NetMessage.SendData(50, -1, -1, NetworkText.Empty, player.Index, 0f, 0f, 0f, 0);
-			NetMessage.SendData(50, player.Index, -1, NetworkText.Empty, player.Index, 0f, 0f, 0f, 0);
+			//NetMessage.SendData(50, -1, -1, NetworkText.Empty, player.Index, 0f, 0f, 0f, 0);
+			//NetMessage.SendData(50, player.Index, -1, NetworkText.Empty, player.Index, 0f, 0f, 0f, 0);
 
 			NetMessage.SendData(76, player.Index, -1, NetworkText.Empty, player.Index);
 			NetMessage.SendData(76, -1, -1, NetworkText.Empty, player.Index);
