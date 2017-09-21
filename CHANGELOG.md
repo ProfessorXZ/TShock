@@ -4,15 +4,16 @@ This is the rolling changelog for TShock for Terraria. Use past tense when addin
 
 ## Upcoming Changes
 * API: Added hooks for item, projectile and tile bans (@deadsurgeon42)
+* API: Changed `PlayerHooks` permission hook mechanisms to allow negation from hooks (@deadsurgeon42)
 * API: New WorldGrassSpread hook which shold allow corruption/crimson/hallow creep config options to work (@DeathCradle)
 * Fixed saving when one player is one the server and another one joins (@MarioE)
 * Fixed /spawnmob not spawning negative IDs (@MarioE)
 * Validated tile placement on PlaceObject; clients can no longer place frames, paintings etc with dirt blocks (@bartico6, @ProfessorXZ)
 * Updated to new stat tracking system with more data so we can actually make informed software decisions (Jordan Coulam)
 * Fixed /time display at the end of Terraria hours (@koneko-nyan)
+* Added /group rename to allow changing group names (@ColinBohn, @ProfessorXZ)
 
 ## TShock 4.3.24
-* API: Changed `PlayerHooks` permission hook mechanisms to allow negation from hooks (@deadsurgeon42)
 * Updated OpenTerraria API to 1.3.5.3 (@DeathCradle)
 * Updated Terraria Server API to 1.3.5.3 (@WhiteXZ, @hakusaro)
 * Updated TShock core components to 1.3.5.3 (@hakusaro)

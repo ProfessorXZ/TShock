@@ -26,6 +26,9 @@ using MySql.Data.MySqlClient;
 
 namespace TShockAPI.DB
 {
+	/// <summary>
+	/// Represents the GroupManager, which is in charge of group management.
+	/// </summary>
 	public class GroupManager : IEnumerable<Group>
 	{
 		private IDbConnection database;
@@ -85,7 +88,11 @@ namespace TShockAPI.DB
 				AddGroup(name, parent, permissions, Group.defaultChatColor);
 		}
 
-
+		/// <summary>
+		/// Determines whether the given group exists.
+		/// </summary>
+		/// <param name="group">The group.</param>
+		/// <returns><c>true</c> if it does; otherwise, <c>false</c>.</returns>
 		public bool GroupExists(string group)
 		{
 			if (group == "superadmin")
@@ -99,11 +106,20 @@ namespace TShockAPI.DB
 			return GetEnumerator();
 		}
 
+		/// <summary>
+		/// Gets the enumerator.
+		/// </summary>
+		/// <returns>The enumerator.</returns>
 		public IEnumerator<Group> GetEnumerator()
 		{
 			return groups.GetEnumerator();
 		}
 
+		/// <summary>
+		/// Gets the group matching the specified name.
+		/// </summary>
+		/// <param name="name">The name.</param>
+		/// <returns>The group.</returns>
 		public Group GetGroupByName(string name)
 		{
 			var ret = groups.Where(g => g.Name == name);
@@ -200,6 +216,70 @@ namespace TShockAPI.DB
 			group.Suffix = suffix;
 		}
 
+		/// <summary>
+		/// Renames the specified group.
+		/// </summary>
+		/// <param name="name">The group's name.</param>
+		/// <param name="newName">The new name.</param>
+		/// <returns>The response.</returns>
+		public String RenameGroup(string name, string newName)
+		{
+			if (!GroupExists(name))
+			{
+				throw new GroupNotExistException(name);
+			}
+
+			if (GroupExists(newName))
+			{
+				throw new GroupExistsException(newName);
+			}
+
+			if (database.Query("UPDATE GroupList SET GroupName = @0 WHERE GroupName = @1", newName, name) == 1)
+			{
+				var oldGroup = GetGroupByName(name);
+				var newGroup = new Group(newName, oldGroup.Parent, oldGroup.ChatColor, oldGroup.Permissions)
+				{
+					Prefix = oldGroup.Prefix,
+					Suffix = oldGroup.Suffix
+				};
+
+				groups.Remove(oldGroup);
+				groups.Add(newGroup);
+				// We need to check if the old group has been referenced as a parent and update those references accordingly
+				database.Query("UPDATE GroupList SET Parent = @0 WHERE Parent = @1", newName, name);
+				foreach (var group in groups.Where(g => g.Parent != null && g.Parent == oldGroup))
+				{
+					group.Parent = newGroup;
+				}
+
+				if (TShock.Config.DefaultGuestGroupName == oldGroup.Name)
+				{
+					TShock.Config.DefaultGuestGroupName = newGroup.Name;
+					Group.DefaultGroup = newGroup;
+				}
+				if (TShock.Config.DefaultRegistrationGroupName == oldGroup.Name)
+				{
+					TShock.Config.DefaultRegistrationGroupName = newGroup.Name;
+				}
+
+				TShock.Config.Write(FileTools.ConfigPath);
+				database.Query("UPDATE Users SET Usergroup = @0 WHERE Usergroup = @1", newName, name);
+				foreach (var player in TShock.Players.Where(p => p?.Group == oldGroup))
+				{
+					player.Group = newGroup;
+				}
+				return $"Group \"{name}\" has been renamed to \"{newName}\".";
+			}
+
+			throw new GroupManagerException($"Failed to rename group \"{name}\".");
+		}
+
+		/// <summary>
+		/// Deletes the specified group.
+		/// </summary>
+		/// <param name="name">The group's name.</param>
+		/// <param name="exceptions">Whether exceptions will be thrown in case something goes wrong.</param>
+		/// <returns></returns>
 		public String DeleteGroup(String name, bool exceptions = false)
 		{
 			if (!GroupExists(name))
@@ -214,12 +294,18 @@ namespace TShockAPI.DB
 				groups.Remove(TShock.Utils.GetGroup(name));
 				return "Group " + name + " has been deleted successfully.";
 			}
-			else if (exceptions)
-				throw new GroupManagerException("Failed to delete group '" + name + ".'");
 
-			return "";
+			if (exceptions)
+				throw new GroupManagerException("Failed to delete group '" + name + ".'");
+			return "Failed to delete group '" + name + ".'";
 		}
 
+		/// <summary>
+		/// Enumerates the given permission list and adds permissions for the specified group accordingly.
+		/// </summary>
+		/// <param name="name">The group name.</param>
+		/// <param name="permissions">The permission list.</param>
+		/// <returns></returns>
 		public String AddPermissions(String name, List<String> permissions)
 		{
 			if (!GroupExists(name))
@@ -237,6 +323,12 @@ namespace TShockAPI.DB
 			return "";
 		}
 
+		/// <summary>
+		/// Enumerates the given permission list and removes valid permissions for the specified group accordingly.
+		/// </summary>
+		/// <param name="name">The group name.</param>
+		/// <param name="permissions">The permission list.</param>
+		/// <returns></returns>
 		public String DeletePermissions(String name, List<String> permissions)
 		{
 			if (!GroupExists(name))
@@ -254,6 +346,9 @@ namespace TShockAPI.DB
 			return "";
 		}
 
+		/// <summary>
+		/// Enumerates the group list and loads permissions for each group appropriately.
+		/// </summary>
 		public void LoadPermisions()
 		{
 			try
@@ -360,32 +455,60 @@ namespace TShockAPI.DB
 		}
 	}
 
+	/// <summary>
+	/// Represents the base GroupManager exception.
+	/// </summary>
 	[Serializable]
 	public class GroupManagerException : Exception
 	{
+		/// <summary>
+		/// Initializes a new instance of the <see cref="GroupManagerException"/> with the specified message.
+		/// </summary>
+		/// <param name="message">The message.</param>
 		public GroupManagerException(string message)
 			: base(message)
 		{
 		}
 
+		/// <summary>
+		/// Initializes a new instance of the <see cref="GroupManagerException"/> with the specified message and inner exception.
+		/// </summary>
+		/// <param name="message">The message.</param>
+		/// <param name="inner">The inner exception.</param>
 		public GroupManagerException(string message, Exception inner)
 			: base(message, inner)
 		{
 		}
 	}
 
+	/// <summary>
+	/// Represents the GroupExists exception.
+	/// This exception is thrown whenever an attempt to add an existing group into the database is made.
+	/// </summary>
 	[Serializable]
 	public class GroupExistsException : GroupManagerException
 	{
+		/// <summary>
+		/// Initializes a new instance of the <see cref="GroupExistsException"/> with the specified group name.
+		/// </summary>
+		/// <param name="name">The group name.</param>
 		public GroupExistsException(string name)
 			: base("Group '" + name + "' already exists")
 		{
 		}
 	}
 
+	/// <summary>
+	/// Represents the GroupNotExist exception.
+	/// This exception is thrown whenever we try to access a group that does not exist.
+	/// </summary>
 	[Serializable]
 	public class GroupNotExistException : GroupManagerException
 	{
+		/// <summary>
+		/// Initializes a new instance of the <see cref="GroupNotExistException"/> with the specified group name.
+		/// </summary>
+		/// <param name="name">The group name.</param>
 		public GroupNotExistException(string name)
 			: base("Group '" + name + "' does not exist")
 		{
